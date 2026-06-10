@@ -15,7 +15,12 @@ from sender_extractor import extract_original_sender_domain
 # Paths
 CSV_ROOT = Path(__file__).resolve().parents[2]
 ATTACHMENT_DIR = CSV_ROOT / "files" / "api"
-SQL_QUERY = "SELECT [internet_message_id] FROM [EMail_Reader_Process_Data].[dbo].[tbl_Process_Emails] WHERE [completed_at] IS NULL"
+SQL_QUERY = """
+SELECT DISTINCT [internet_message_id]
+FROM [10.10.0.1].[EMail_Reader_Process_Data].[dbo].[tbl_Process_Emails]
+WHERE [completed_at] IS NULL
+  AND NULLIF(LTRIM(RTRIM([internet_message_id])), '') IS NOT NULL
+"""
 POLL_SECONDS = 60 * 60
 
 def get_message_ids():
