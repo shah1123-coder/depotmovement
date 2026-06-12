@@ -10,13 +10,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
-import pyodbc
-
-
-DEPOT_REPORT_CODE = Path(__file__).resolve().parents[2] / "depot report" / "code"
+DEPOT_REPORT_CODE = Path(__file__).resolve().parents[1] / "depot_report" / "code"
 sys.path.insert(0, str(DEPOT_REPORT_CODE))
 
 from db.icms_client import (  # noqa: E402
+    run_sql,
     get_booking_ids_by_reference,
     get_container_ids,
     get_container_status_ids,
@@ -35,7 +33,13 @@ RESULTS_DIR = CSV_ROOT / "results"
 GATE_IN_JSON = RESULTS_DIR / "gate_in.json"
 GATE_OUT_JSON = RESULTS_DIR / "gate_out.json"
 GATE_ERRORS_JSON = RESULTS_DIR / "gate_errors.json"
-PROCESS_EMAIL_DATABASE = "EMail_Reader_Process_Data"
+PROCESS_EMAIL_DATABASE = os.environ.get(
+    "PROCESS_EMAIL_DATABASE", "EMail_Reader_Process_Data"
+)
+
+
+def _sql_str(value: str) -> str:
+    return "N'" + str(value).replace("'", "''") + "'"
 
 
 def mark_process_emails_completed(
@@ -48,28 +52,17 @@ def mark_process_emails_completed(
     if not message_ids:
         return 0
 
-    server = os.environ.get("ICMS_SERVER", "10.10.0.72")
-    user = os.environ.get("ICMS_USER", "Sa")
-    password = os.environ.get("ICMS_PASSWORD", "pass@2020$")
-    driver = os.environ.get("ICMS_DRIVER", "ODBC Driver 17 for SQL Server")
-    conn_str = (
-        f"DRIVER={{{driver}}};SERVER={server};DATABASE={PROCESS_EMAIL_DATABASE};"
-        f"UID={user};PWD={password}"
-    )
-    sql = """
+    completed_literal = "'" + completed_at.strftime("%Y-%m-%d %H:%M:%S") + "'"
+    id_list = ",".join(_sql_str(message_id) for message_id in message_ids)
+    sql = f"""
         UPDATE dbo.tbl_Process_Emails
-        SET completed_at = ?
-        WHERE internet_message_id = ?
-          AND completed_at IS NULL
+        SET completed_at = {completed_literal}
+        WHERE internet_message_id IN ({id_list})
+          AND completed_at IS NULL;
+        SELECT @@ROWCOUNT;
     """
-    with pyodbc.connect(conn_str) as conn:
-        cursor = conn.cursor()
-        updated = 0
-        for message_id in message_ids:
-            cursor.execute(sql, completed_at, message_id)
-            updated += max(cursor.rowcount, 0)
-        conn.commit()
-    return updated
+    lines = run_sql(sql, database=PROCESS_EMAIL_DATABASE)
+    return int(lines[-1].strip()) if lines else 0
 
 
 def _value(record: Any, name: str, default: Any = None) -> Any:

@@ -1,4 +1,4 @@
-Downloads\csv
+csv
 |-- code
 |   `-- api
 |       |-- processor.py
@@ -11,10 +11,9 @@ Downloads\csv
 Runtime requirements:
 |-- Python 3 standard library
 |-- sqlcmd executable
-|-- SQL Server: 10.10.0.72
-|-- Linked server: 10.1.0.6
+|-- SQL Server: 10.1.0.6
 |   `-- EMail_Reader_Process_Data.dbo.tbl_Process_Emails
-|-- ICMS database on 10.10.0.72
+|-- ICMS database on 10.1.0.6
 |   |-- dbo.PortDetails
 |   `-- dbo.LocationContacts
 `-- HTTPS API: mail-reader.sarjak.com

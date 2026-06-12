@@ -225,7 +225,7 @@ def main() -> None:
         "inputs",
         nargs="*",
         type=Path,
-        help="Excel files/folders. Default: Downloads\\csv\\files\\api",
+        help="Excel files/folders. Default: files/api relative to the csv root",
     )
     parser.add_argument(
         "--min-cells",
@@ -236,7 +236,7 @@ def main() -> None:
     parser.add_argument(
         "--insert",
         action="store_true",
-        help="Insert valid movement payloads and error payloads into archeet.",
+        help="Insert valid movement payloads and error payloads into the process database.",
     )
     args = parser.parse_args()
     inputs = args.inputs or [API_DIR]

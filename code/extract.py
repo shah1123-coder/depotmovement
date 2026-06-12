@@ -524,7 +524,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        help="Optional extraction root. Default: Downloads\\csv\\extraction\\<workbook name>",
+        help="Optional extraction root. Default: extraction/<workbook name> relative to the csv root",
     )
     parser.add_argument(
         "--min-cells",

@@ -17,7 +17,7 @@ from countries import fallbacks_for_sheet, india, patterns_for_sheet
 from database import write_gate_out_payloads
 from movement import categorize_and_copy
 
-DEPOT_REPORT_CODE = Path(__file__).resolve().parents[2] / "depot report" / "code"
+DEPOT_REPORT_CODE = Path(__file__).resolve().parents[1] / "depot_report" / "code"
 sys.path.insert(0, str(DEPOT_REPORT_CODE))
 from db.icms_client import (
     get_booked_qty_by_booking_id,

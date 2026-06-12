@@ -1,6 +1,6 @@
 # The Absolute Atomic Reference: Excel Extraction & Reporting Pipeline
 
-This document provides a line-of-logic specification for every component in the `Downloads\csv\code\` directory. It is the definitive blueprint for the modular country-specific integration system.
+This document provides a line-of-logic specification for every component in the `code/` directory relative to the `csv/` project root. It is the definitive blueprint for the modular country-specific integration system.
 
 ---
 
