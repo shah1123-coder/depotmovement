@@ -1,0 +1,18 @@
+# Production configuration — ship this file at the csv folder root.
+# Values are loaded at import time; real environment variables take precedence.
+
+# ICMS application database (read-only lookups)
+ICMS_SERVER=10.1.0.6
+ICMS_DATABASE=ICMS
+ICMS_USER=icms_AI_ro
+ICMS_PASSWORD=AI@iCMS@RO
+
+# Mail-reader process database (processor.py polling, completion updates,
+# and all gate-movement inserts — PlotInDetails/PlotOutDetails/DepotMovementError)
+MAIL_DB_SERVER=10.1.0.6
+MAIL_DB_USER=icms_AI_ro
+MAIL_DB_PASSWORD=AI@iCMS@RO
+PROCESS_EMAIL_DATABASE=EMail_Reader_Process_Data
+
+# sqlcmd binary. Install mssql-tools and keep sqlcmd on PATH.
+SQLCMD_PATH=sqlcmd

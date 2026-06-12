@@ -1,7 +1,6 @@
 __pycache__/
 *.pyc
 .venv/
-info.txt
 files/.running/
 files/api/*.xlsx
 files/api/*.message-id
