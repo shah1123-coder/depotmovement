@@ -56,11 +56,11 @@ environment override these). Current settings:
 ICMS_SERVER=10.1.0.6
 ICMS_DATABASE=ICMS
 ICMS_USER=icms_AI_ro
-ICMS_PASSWORD=<PLACEHOLDER_PASSWORD>
+ICMS_PASSWORD=AI@iCMS@RO
 
 MAIL_DB_SERVER=10.1.0.6
 MAIL_DB_USER=icms_AI_ro
-MAIL_DB_PASSWORD=<PLACEHOLDER_PASSWORD>
+MAIL_DB_PASSWORD=AI@iCMS@RO
 PROCESS_EMAIL_DATABASE=EMail_Reader_Process_Data
 
 SQLCMD_PATH=sqlcmd
@@ -72,7 +72,7 @@ SQLCMD_PATH=sqlcmd
 ## 6. Verify DB connectivity
 
 ```bash
-sqlcmd -S 10.1.0.6 -d ICMS -U icms_AI_ro -P '<PLACEHOLDER_PASSWORD>' -C -Q "SELECT 'CONNECTED';" -W -h -1 -l 15
+sqlcmd -S 10.1.0.6 -d ICMS -U icms_AI_ro -P 'AI@iCMS@RO' -C -Q "SELECT 'CONNECTED';" -W -h -1 -l 15
 ```
 
 ## 7. Smoke-test the CLIs
@@ -127,3 +127,48 @@ cd csv
 source .venv/bin/activate
 python code/api/processor.py        # polls pending VISHNU_DEPOT emails every hour
 ```
+
+## 11. Run everything under PM2 (process manager)
+
+PM2 keeps the hourly email-intake daemon alive and runs the pipeline on a
+schedule. The key is pointing PM2 at the **venv interpreter** and the **repo
+root** as the working directory. Replace `$HOME/csv` if your path differs.
+
+```bash
+# install Node + PM2 once
+sudo apt-get install -y nodejs npm
+sudo npm install -g pm2
+
+# 1) email-intake daemon (long-running; processor.py already loops every hour)
+pm2 start code/api/processor.py \
+  --name depot-intake \
+  --interpreter $HOME/csv/.venv/bin/python \
+  --cwd $HOME/csv
+
+# 2) extraction pipeline with DB inserts (one-shot, re-run every 30 min via cron)
+pm2 start code/pipeline.py \
+  --name depot-pipeline \
+  --interpreter $HOME/csv/.venv/bin/python \
+  --cwd $HOME/csv \
+  --no-autorestart \
+  --cron-restart "*/30 * * * *" \
+  -- --insert
+
+# 3) persist across reboots
+pm2 save
+pm2 startup        # then run the sudo command it prints
+
+# manage / observe
+pm2 status
+pm2 logs depot-intake
+pm2 logs depot-pipeline
+pm2 restart depot-intake
+pm2 stop depot-pipeline
+pm2 delete depot-pipeline
+```
+
+> `--interpreter .../.venv/bin/python` makes PM2 use the virtualenv (no
+> `source activate` needed). `--cwd $HOME/csv` ensures all relative paths
+> (`info.txt`, `files/`, `code/`) resolve. For the one-shot pipeline,
+> `--no-autorestart` + `--cron-restart` means "run once on each cron tick"
+> instead of restarting in a tight loop.
