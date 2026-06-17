@@ -1,9 +1,0 @@
-__pycache__/
-*.pyc
-.venv/
-files/.running/
-files/api/*.xlsx
-files/api/*.message-id
-files/processed/
-files/extraction/
-files/results/

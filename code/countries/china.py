@@ -10,7 +10,7 @@ from typing import Pattern
 # Integration metadata and worksheet-language detection.
 COUNTRY_CODE = "CN"
 COUNTRY_NAME = "China"
-LANGUAGE_PATTERN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+LANGUAGE_PATTERN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 
 
 @dataclass(frozen=True)
@@ -70,12 +70,12 @@ SHEET_SELECTION = SheetSelection(
         r"GATE\s*IN\s*&\s*OUT\s*SUMMERY",
         re.IGNORECASE,
     ),
-    in_language_marker="\u8fdb\u573a",
-    out_language_marker="\u51fa\u573a",
+    in_language_marker="进场",   # 进场
+    out_language_marker="出场",  # 出场
     excluded_name_parts=("MONTH", "MASTER"),
     always_process_names=("SHEET1",),
-    direct_in_names=("\u8fdb\u573a",),
-    direct_out_names=("\u51fa\u573a",),
+    direct_in_names=("进场",),   # 进场
+    direct_out_names=("出场",),  # 出场
 )
 
 
@@ -98,10 +98,10 @@ TIME_PATTERN = re.compile(
 # Regex used only by OUT processing.
 BOOKING_ID = re.compile(r"\b[A-Za-z]{3}/[A-Za-z]{3}/\d{6}\b")
 VEHICLE_NUMBER = re.compile(
-    r"[\u4eac\u6d25\u6caa\u6e1d\u5180\u8c6b\u4e91\u8fbd\u9ed1\u6e58"
-    r"\u7696\u9c81\u65b0\u82cf\u6d59\u8d63\u9102\u6842\u7518\u664b"
-    r"\u8499\u9655\u5409\u95fd\u8d35\u7ca4\u9752\u85cf\u5ddd\u5b81"
-    r"\u743c][A-Z][\u00b7\-]?[A-Z0-9]{5,6}\b",
+    r"[京津沪渝冀豫云辽黑湘"
+    r"皖鲁新苏浙赣鄂桂甘晋"
+    r"蒙陕吉闽贵粤青藏川宁"
+    r"琼][A-Z][·\-]?[A-Z0-9]{5,6}\b",
     re.IGNORECASE,
 )
 
@@ -129,11 +129,11 @@ FALLBACKS = Fallbacks(
     time_formats=("%I:%M %p", "%I:%M%p"),
     whitespace_pattern=re.compile(r"\s+"),
     default_error_code="NO_BOOKING_ID",
-    in_remark_markers=("remark", "\u5907\u6ce8"),
-    out_booking_markers=("\u5355\u53f7",),
+    in_remark_markers=("remark", "备注"),       # 备注
+    out_booking_markers=("单号",),              # 单号
     out_booking_fallback=re.compile(r"^\d{6}$"),
     out_seal_markers=("seal",),
     out_transporter_markers=("transporter",),
-    out_remark_markers=("remark", "\u5907\u6ce8"),
-    out_vehicle_markers=("\u573a\u8f66\u724c",),
+    out_remark_markers=("remark", "备注"),      # 备注
+    out_vehicle_markers=("场车牌",),        # 场车牌
 )

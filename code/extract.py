@@ -84,25 +84,20 @@ class TableExtract:
 def is_plain_text(value: Any) -> bool:
     if not isinstance(value, str):
         return False
-
     text = value.strip()
     if not text:
         return False
-
     return not text.startswith("=")
 
 
 def merged_cell_map(sheet: Worksheet) -> dict[tuple[int, int], tuple[int, int, int, int, Any]]:
     merge_map: dict[tuple[int, int], tuple[int, int, int, int, Any]] = {}
-
     for merged_range in sheet.merged_cells.ranges:
         min_col, min_row, max_col, max_row = merged_range.bounds
-
         value = sheet.cell(row=min_row, column=min_col).value
         for row in range(min_row, max_row + 1):
             for col in range(min_col, max_col + 1):
                 merge_map[(row, col)] = (min_col, min_row, max_col, max_row, value)
-
     return merge_map
 
 
@@ -111,7 +106,6 @@ def iter_logical_row_cells(
 ) -> list[LogicalCell]:
     cells: list[LogicalCell] = []
     col = 1
-
     while col <= sheet.max_column:
         merge = merge_map.get((row, col))
         if merge:
@@ -143,7 +137,6 @@ def iter_logical_row_cells(
             )
         )
         col += 1
-
     return cells
 
 
@@ -151,20 +144,16 @@ def detect_headers_in_sheet(sheet: Worksheet, min_cells: int = 3) -> list[Header
     merge_map = merged_cell_map(sheet)
     headers: list[HeaderRun] = []
     row = 1
-
     while row <= sheet.max_row:
         runs = candidate_header_runs(sheet, row, merge_map, min_cells)
         if not runs:
             row += 1
             continue
-
         for run in runs:
             headers.append(header_from_run(sheet.title, run, find_title(sheet, row, merge_map)))
-
         row += 1
         while row <= sheet.max_row and candidate_header_runs(sheet, row, merge_map, min_cells):
             row += 1
-
     return headers
 
 
@@ -176,19 +165,15 @@ def candidate_header_runs(
 ) -> list[list[LogicalCell]]:
     runs: list[list[LogicalCell]] = []
     run: list[LogicalCell] = []
-
     for cell in iter_logical_row_cells(sheet, row, merge_map):
         if is_plain_text(cell.value):
             run.append(cell)
             continue
-
         if len(run) >= min_cells:
             runs.append(run)
         run = []
-
     if len(run) >= min_cells:
         runs.append(run)
-
     return runs
 
 
@@ -214,14 +199,12 @@ def find_title(
             for cell in logical_cells
             if has_content(cell.value)
         ]
-
         if content_cells:
             return TableTitle(
                 row=row,
                 cells=content_cells,
                 text=" ".join(cell.value for cell in content_cells),
             )
-
     return None
 
 
@@ -238,7 +221,6 @@ def header_from_run(sheet_name: str, run: list[LogicalCell], title: TableTitle |
         )
         for cell in run
     ]
-
     return HeaderRun(
         sheet=sheet_name,
         row=run[0].row,
@@ -254,23 +236,19 @@ def header_from_run(sheet_name: str, run: list[LogicalCell], title: TableTitle |
 def detect_headers(workbook_path: Path, min_cells: int = 3) -> list[HeaderRun]:
     workbook = load_workbook(workbook_path, data_only=False, read_only=False)
     headers: list[HeaderRun] = []
-
     for sheet in workbook.worksheets:
         if not should_process_sheet(sheet.title):
             continue
         headers.extend(detect_headers_in_sheet(sheet, min_cells=min_cells))
-
     return headers
 
 
 def detect_tables(workbook_path: Path, min_cells: int = 3) -> list[TableExtract]:
     workbook = load_workbook(workbook_path, data_only=False, read_only=False)
     tables: list[TableExtract] = []
-
     for sheet in workbook.worksheets:
         if not should_process_sheet(sheet.title):
             continue
-
         merge_map = merged_cell_map(sheet)
         headers = detect_headers_in_sheet(sheet, min_cells=min_cells)
         for header in headers:
@@ -281,7 +259,6 @@ def detect_tables(workbook_path: Path, min_cells: int = 3) -> list[TableExtract]
                     data_rows=extract_data_rows(sheet, header, merge_map),
                 )
             )
-
     return tables
 
 
@@ -290,10 +267,8 @@ def prepare_input_workbook(workbook_path: Path) -> Path:
     source = workbook_path.resolve()
     source = ensure_xlsx(source, PROCESSED_DIR)
     target = PROCESSED_DIR / source.name
-
     if source == target.resolve():
         return target
-
     shutil.copy2(source, target)
     return target
 
@@ -311,12 +286,10 @@ def extract_data_rows(
     merge_map: dict[tuple[int, int], tuple[int, int, int, int, Any]],
 ) -> list[list[ExtractedCell]]:
     rows: list[list[ExtractedCell]] = []
-
     for row in range(header.row + 1, sheet.max_row + 1):
         logical_cells = iter_logical_row_cells(sheet, row, merge_map)
         if not row_has_content(logical_cells):
             break
-
         extracted = extract_cells_for_columns(logical_cells, header.start_col, header.end_col)
         extracted.append(
             ExtractedCell(
@@ -330,7 +303,6 @@ def extract_data_rows(
             )
         )
         rows.append(extracted)
-
     return rows
 
 
@@ -346,11 +318,9 @@ def extract_cells_for_columns(
     cells: list[LogicalCell], start_col: int, end_col: int
 ) -> list[ExtractedCell]:
     extracted: list[ExtractedCell] = []
-
     for cell in cells:
         if cell.end_col < start_col or cell.start_col > end_col:
             continue
-
         extracted.append(
             ExtractedCell(
                 row=cell.row,
@@ -362,7 +332,6 @@ def extract_cells_for_columns(
                 is_vertical_merge=cell.is_vertical_merge,
             )
         )
-
     return extracted
 
 
@@ -371,10 +340,8 @@ def should_process_sheet(sheet_name: str) -> bool:
     normalized = sheet_name.upper()
     if any(part in normalized for part in selection.excluded_name_parts):
         return False
-
     if normalized in selection.always_process_names:
         return True
-
     if normalized in selection.direct_in_names or normalized in selection.direct_out_names:
         return True
 
@@ -391,13 +358,11 @@ def should_process_sheet(sheet_name: str) -> bool:
 
     if bool(selection.recognized_names.search(sheet_name)):
         return not (has_in and has_out)
-
     return (has_in or has_out) and not (has_in and has_out)
 
 
 def write_table_workbooks(tables: list[TableExtract], output_path: Path) -> list[TableExtract]:
     saved_tables: list[TableExtract] = []
-
     for table in tables:
         sheet_dir = output_path / sanitize_path_part(table.header.sheet)
         sheet_dir.mkdir(parents=True, exist_ok=True)
@@ -412,7 +377,6 @@ def write_table_workbooks(tables: list[TableExtract], output_path: Path) -> list
                 output=str(saved_path),
             )
         )
-
     return saved_tables
 
 
@@ -434,9 +398,7 @@ def write_table_workbook(table: TableExtract, output_path: Path) -> Path:
     col_offset = table.header.start_col - 1
 
     if table.header.title:
-        # Title is always at output row 1 if it exists
         write_extracted_cells(sheet, 1, table.header.title.cells, col_offset=col_offset)
-        # Header row is relative to the title row
         header_output_row = 1 + (table.header.row - table.header.title.row)
     else:
         header_output_row = 1
@@ -447,7 +409,7 @@ def write_table_workbook(table: TableExtract, output_path: Path) -> Path:
         column=table.header.end_col - col_offset + 1,
         value="Error",
     )
-    
+
     current_output_row = header_output_row + 1
     for data_row in table.data_rows:
         write_extracted_cells(sheet, current_output_row, data_row, col_offset=col_offset)
@@ -458,40 +420,14 @@ def write_table_workbook(table: TableExtract, output_path: Path) -> Path:
     return saved_path
 
 
-def write_extracted_workbook(headers: list[HeaderRun], output_path: Path) -> Path:
-    workbook = Workbook()
-    sheet = workbook.active
-    sheet.title = "Extracted"
-    output_row = 1
-
-    for index, header in enumerate(headers, start=1):
-        # sheet.cell(row=output_row, column=1, value=f"{header.sheet} row {header.row}")
-        # output_row += 1
-
-        if header.title:
-            write_extracted_cells(sheet, output_row, header.title.cells)
-            header_output_row = output_row + (header.row - header.title.row)
-        else:
-            header_output_row = output_row
-
-        write_extracted_cells(sheet, header_output_row, header.cells)
-        output_row = header_output_row + 2 if index < len(headers) else header_output_row + 1
-
-    saved_path = available_output_path(output_path)
-    workbook.save(saved_path)
-    return saved_path
-
-
 def available_output_path(output_path: Path) -> Path:
     if not output_path.exists():
         return output_path
-
     try:
         with output_path.open("a+b"):
             return output_path
     except PermissionError:
         pass
-
     for index in range(1, 1000):
         fallback = output_path.with_name(f"{output_path.stem}_{index}{output_path.suffix}")
         if not fallback.exists():
@@ -501,7 +437,6 @@ def available_output_path(output_path: Path) -> Path:
                 return fallback
         except PermissionError:
             continue
-
     raise PermissionError(f"Could not find an unlocked output path near {output_path}")
 
 
@@ -521,17 +456,9 @@ def write_extracted_cells(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Detect text headers in .xlsx sheets.")
     parser.add_argument("workbook", type=Path, help="Path to an Excel workbook")
-    parser.add_argument(
-        "--output",
-        type=Path,
-        help="Optional extraction root. Default: extraction/<workbook name> relative to the csv root",
-    )
-    parser.add_argument(
-        "--min-cells",
-        type=int,
-        default=3,
-        help="Minimum logical text cells needed for a header run. Default: 3",
-    )
+    parser.add_argument("--output", type=Path, help="Optional extraction root.")
+    parser.add_argument("--min-cells", type=int, default=3,
+                        help="Minimum logical text cells needed for a header run. Default: 3")
     args = parser.parse_args()
 
     processed_workbook = prepare_input_workbook(args.workbook)

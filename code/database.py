@@ -33,27 +33,19 @@ RESULTS_DIR = CSV_ROOT / "results"
 GATE_IN_JSON = RESULTS_DIR / "gate_in.json"
 GATE_OUT_JSON = RESULTS_DIR / "gate_out.json"
 GATE_ERRORS_JSON = RESULTS_DIR / "gate_errors.json"
-PROCESS_EMAIL_DATABASE = os.environ.get(
-    "PROCESS_EMAIL_DATABASE", "EMail_Reader_Process_Data"
-)
+PROCESS_EMAIL_DATABASE = os.environ.get("PROCESS_EMAIL_DATABASE", "EMail_Reader_Process_Data")
 
 
 def _sql_str(value: str) -> str:
     return "N'" + str(value).replace("'", "''") + "'"
 
 
-def mark_process_emails_completed(
-    internet_message_ids: Iterable[str],
-    completed_at: datetime,
-) -> int:
-    message_ids = sorted(
-        {str(message_id).strip() for message_id in internet_message_ids if str(message_id).strip()}
-    )
+def mark_process_emails_completed(internet_message_ids: Iterable[str], completed_at: datetime) -> int:
+    message_ids = sorted({str(m).strip() for m in internet_message_ids if str(m).strip()})
     if not message_ids:
         return 0
-
     completed_literal = "'" + completed_at.strftime("%Y-%m-%d %H:%M:%S") + "'"
-    id_list = ",".join(_sql_str(message_id) for message_id in message_ids)
+    id_list = ",".join(_sql_str(m) for m in message_ids)
     sql = f"""
         UPDATE dbo.tbl_Process_Emails
         SET completed_at = {completed_literal}
@@ -86,10 +78,7 @@ def plot_id_from_attachment_name(name: str) -> int | None:
 
 def _write_json(path: Path, payloads: list[dict[str, dict[str, Any]]]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payloads, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    path.write_text(json.dumps(payloads, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return path
 
 
@@ -100,12 +89,10 @@ def _read_json(path: Path) -> list[dict[str, dict[str, Any]]]:
     return data if isinstance(data, list) else []
 
 
-def build_gate_in_payloads(
-    records_by_depot: Iterable[tuple[str, Iterable[Any]]],
-) -> list[dict[str, dict[str, Any]]]:
+def build_gate_in_payloads(records_by_depot: Iterable[tuple[str, Iterable[Any]]]) -> list[dict[str, dict[str, Any]]]:
     rows = [(depot, record) for depot, records in records_by_depot for record in records]
     container_ids = get_container_ids(_value(record, "container_no") for _depot, record in rows)
-    internal_ids = [container_id for container_id in container_ids.values() if container_id is not None]
+    internal_ids = [cid for cid in container_ids.values() if cid is not None]
     booking_ids = get_previous_gate_out_booking_ids(internal_ids)
     plot_in_ids = get_latest_plot_in_ids_by_status(internal_ids)
 
@@ -132,13 +119,11 @@ def build_gate_in_payloads(
     return payloads
 
 
-def build_gate_out_payloads(
-    records_by_depot: Iterable[tuple[str, Iterable[Any]]],
-) -> list[dict[str, dict[str, Any]]]:
+def build_gate_out_payloads(records_by_depot: Iterable[tuple[str, Iterable[Any]]]) -> list[dict[str, dict[str, Any]]]:
     rows = [(depot, record) for depot, records in records_by_depot for record in records]
     container_nos = [_value(record, "container_id") for _depot, record in rows]
     container_ids = get_container_ids(container_nos)
-    internal_ids = [container_id for container_id in container_ids.values() if container_id is not None]
+    internal_ids = [cid for cid in container_ids.values() if cid is not None]
     booking_refs = [
         _value(record, "booking_id")
         for _depot, record in rows
@@ -177,19 +162,12 @@ def build_gate_out_payloads(
     return payloads
 
 
-def build_error_payloads(
-    gate_in_payloads: Iterable[dict[str, dict[str, Any]]],
-    gate_out_payloads: Iterable[dict[str, dict[str, Any]]],
-) -> list[dict[str, dict[str, Any]]]:
+def build_error_payloads(gate_in_payloads, gate_out_payloads) -> list[dict[str, dict[str, Any]]]:
     errors: list[dict[str, dict[str, Any]]] = []
     for gate_type, payloads in (("IN", gate_in_payloads), ("OUT", gate_out_payloads)):
         for payload in payloads:
             values = payload.get("values", {})
-            error_codes = {
-                code.strip()
-                for code in str(values.get("ErrorCode") or "").split(",")
-                if code.strip()
-            }
+            error_codes = {c.strip() for c in str(values.get("ErrorCode") or "").split(",") if c.strip()}
             if not error_codes or "DUPLICATE_RECORD" in error_codes:
                 continue
             error_values = dict(values)
@@ -209,18 +187,14 @@ def reset_generated_payloads() -> None:
             path.unlink()
 
 
-def write_gate_in_payloads(
-    records_by_depot: Iterable[tuple[str, Iterable[Any]]],
-) -> tuple[Path, list[dict[str, dict[str, Any]]]]:
+def write_gate_in_payloads(records_by_depot):
     payloads = build_gate_in_payloads(records_by_depot)
     path = _write_json(GATE_IN_JSON, payloads)
     refresh_error_output()
     return path, payloads
 
 
-def write_gate_out_payloads(
-    records_by_depot: Iterable[tuple[str, Iterable[Any]]],
-) -> tuple[Path, list[dict[str, dict[str, Any]]]]:
+def write_gate_out_payloads(records_by_depot):
     payloads = build_gate_out_payloads(records_by_depot)
     path = _write_json(GATE_OUT_JSON, payloads)
     refresh_error_output()

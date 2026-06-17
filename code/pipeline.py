@@ -49,7 +49,6 @@ def configure_run_paths(run_root: Path) -> None:
     out.OUTPUT_PATH = results / "out.txt"
 
     import database
-
     database.RESULTS_DIR = results
     database.GATE_IN_JSON = results / "gate_in.json"
     database.GATE_OUT_JSON = results / "gate_out.json"
@@ -86,11 +85,7 @@ def available_run_path(root: Path, stamp: str) -> Path:
 
 def finalize_run(run_root: Path, stamp: str) -> dict[str, Path]:
     finalized: dict[str, Path] = {}
-    for name, root in (
-        ("processed", PROCESSED_ROOT),
-        ("extraction", EXTRACTION_ROOT),
-        ("results", RESULTS_ROOT),
-    ):
+    for name, root in (("processed", PROCESSED_ROOT), ("extraction", EXTRACTION_ROOT), ("results", RESULTS_ROOT)):
         source = run_root / name
         source.mkdir(parents=True, exist_ok=True)
         root.mkdir(parents=True, exist_ok=True)
@@ -117,49 +112,32 @@ def archive_inputs(inputs: list[Path], processed_dir: Path) -> None:
 
 def discover_workbooks(inputs: list[Path]) -> list[Path]:
     workbooks: dict[Path, None] = {}
-
     for input_path in inputs:
         path = input_path.expanduser().resolve()
         if not path.exists():
             raise FileNotFoundError(f"Input does not exist: {path}")
-
         candidates = path.rglob("*") if path.is_dir() else [path]
         for candidate in candidates:
-            if (
-                candidate.is_file()
-                and not candidate.name.startswith("~$")
-                and candidate.suffix.lower() in SUPPORTED_EXCEL_SUFFIXES
-            ):
+            if (candidate.is_file()
+                    and not candidate.name.startswith("~$")
+                    and candidate.suffix.lower() in SUPPORTED_EXCEL_SUFFIXES):
                 workbooks[candidate.resolve()] = None
-
     if not workbooks:
         raise ValueError("No supported Excel workbooks were found.")
     return sorted(workbooks, key=lambda path: str(path).lower())
 
 
-def run_pipeline(
-    inputs: list[Path],
-    min_cells: int = 3,
-    insert_database: bool = False,
-) -> dict[str, object]:
+def run_pipeline(inputs: list[Path], min_cells: int = 3, insert_database: bool = False) -> dict[str, object]:
     FILES_ROOT.mkdir(parents=True, exist_ok=True)
     run_root = FILES_ROOT / ".running" / uuid.uuid4().hex
     try:
-        return _run_pipeline_inner(
-            inputs, run_root, min_cells=min_cells, insert_database=insert_database
-        )
+        return _run_pipeline_inner(inputs, run_root, min_cells=min_cells, insert_database=insert_database)
     except Exception:
-        # Never leave a half-finished temp run behind on failure.
         shutil.rmtree(run_root, ignore_errors=True)
         raise
 
 
-def _run_pipeline_inner(
-    inputs: list[Path],
-    run_root: Path,
-    min_cells: int = 3,
-    insert_database: bool = False,
-) -> dict[str, object]:
+def _run_pipeline_inner(inputs: list[Path], run_root: Path, min_cells: int = 3, insert_database: bool = False) -> dict[str, object]:
     configure_run_paths(run_root)
     reset_generated_payloads()
     workbook_results: list[dict[str, object]] = []
@@ -172,22 +150,19 @@ def _run_pipeline_inner(
             extraction_root = extract.extraction_root_for_workbook(processed)
             tables = extract.detect_tables(processed, min_cells=min_cells)
             saved_tables = extract.write_table_workbooks(tables, extraction_root)
-            workbook_results.append(
-                {
-                    "source": str(source),
-                    "processed": str(processed),
-                    "extraction_root": str(extraction_root),
-                    "outputs": [table.output for table in saved_tables if table.output],
-                }
-            )
+            workbook_results.append({
+                "source": str(source),
+                "processed": str(processed),
+                "extraction_root": str(extraction_root),
+                "outputs": [table.output for table in saved_tables if table.output],
+            })
         except Exception as exc:
-            # A single corrupt/locked workbook must not abort the whole batch.
             workbook_results.append({"source": str(source), "error": str(exc)})
 
     with redirect_stdout(io.StringIO()):
         movement.categorize_and_copy()
-    in_output = in_report.build_report(synchronize=False)
-    out_output = out.build_report(synchronize=False)
+    in_report.build_report(synchronize=False)
+    out.build_report(synchronize=False)
     database_result = insert_generated_payloads() if insert_database else None
     archive_inputs(sources, extract.PROCESSED_DIR)
     completed_at = datetime.now()
@@ -198,8 +173,7 @@ def _run_pipeline_inner(
     results_dir = finalized["results"]
     completed_emails = (
         mark_process_emails_completed(internet_message_ids, completed_at)
-        if insert_database
-        else 0
+        if insert_database else 0
     )
 
     return {
@@ -221,35 +195,15 @@ def _run_pipeline_inner(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the complete Excel extraction pipeline.")
-    parser.add_argument(
-        "inputs",
-        nargs="*",
-        type=Path,
-        help="Excel files/folders. Default: files/api relative to the csv root",
-    )
-    parser.add_argument(
-        "--min-cells",
-        type=int,
-        default=3,
-        help="Minimum logical text cells needed for a header run. Default: 3",
-    )
-    parser.add_argument(
-        "--insert",
-        action="store_true",
-        help="Insert valid movement payloads and error payloads into the process database.",
-    )
+    parser.add_argument("inputs", nargs="*", type=Path,
+                        help="Excel files/folders. Default: files/api relative to the csv root")
+    parser.add_argument("--min-cells", type=int, default=3,
+                        help="Minimum logical text cells needed for a header run. Default: 3")
+    parser.add_argument("--insert", action="store_true",
+                        help="Insert valid movement payloads and error payloads into the process database.")
     args = parser.parse_args()
     inputs = args.inputs or [API_DIR]
-    print(
-        json.dumps(
-            run_pipeline(
-                inputs,
-                min_cells=args.min_cells,
-                insert_database=args.insert,
-            ),
-            indent=2,
-        )
-    )
+    print(json.dumps(run_pipeline(inputs, min_cells=args.min_cells, insert_database=args.insert), indent=2))
 
 
 if __name__ == "__main__":

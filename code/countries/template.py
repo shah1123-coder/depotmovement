@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from typing import Pattern
 
 
-# Integration metadata and worksheet-language detection.
 COUNTRY_CODE = "XX"
 COUNTRY_NAME = "Country Name"
 LANGUAGE_PATTERN = re.compile(r"(?!x)x")
@@ -63,7 +62,6 @@ class SheetSelection:
     direct_out_names: tuple[str, ...]
 
 
-# Worksheet-selection regex, language markers, exclusions, and fallbacks.
 SHEET_SELECTION = SheetSelection(
     standalone_in=re.compile(r"(?<![A-Z0-9])IN(?![A-Z0-9])", re.IGNORECASE),
     standalone_out=re.compile(r"(?<![A-Z0-9])OUT(?![A-Z0-9])", re.IGNORECASE),
@@ -83,16 +81,12 @@ SHEET_SELECTION = SheetSelection(
 )
 
 
-# Shared regex used by both IN and OUT processing.
 CONTAINER_NUMBER = re.compile(r"\b[A-Z]{3}[UJZ]\d{7}\b", re.IGNORECASE)
 DATE_PATTERN = re.compile(r"(?!x)x")
 TIME_PATTERN = re.compile(r"(?!x)x")
-
-# Regex used only by OUT processing.
 BOOKING_ID = re.compile(r"(?!x)x")
 VEHICLE_NUMBER = re.compile(r"(?!x)x")
 
-# Explicit direction contracts consumed by in.py and out.py.
 IN_PATTERNS = InPatterns(
     container_number=CONTAINER_NUMBER,
     date=DATE_PATTERN,
@@ -106,7 +100,6 @@ OUT_PATTERNS = OutPatterns(
     time=TIME_PATTERN,
 )
 
-# Non-regex defaults and parsing fallbacks owned by this integration.
 FALLBACKS = Fallbacks(
     date_formats=(),
     time_formats=("%I:%M %p", "%I:%M%p"),
