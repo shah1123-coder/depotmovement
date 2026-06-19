@@ -1,0 +1,30 @@
+name: "china"
+language: "zh"
+sheet_rules:
+  exclude_if_name_contains: ["MONTH", "MASTER"]
+  always_process_names: ["SHEET1"]
+  direct_in_names: ["进场"]
+  direct_out_names: ["出场"]
+  recognized_names: ["GATE IN", "GATE OUT", "DAILY MOVEMENT", "DAILY REPORT", "进场", "出场"]
+regex:
+  container: '\b[A-Z]{3}[UJZ]\d{7}\b'
+  booking_main: '\b[A-Za-z]{3}/[A-Za-z]{3}/\d{6}\b'
+  booking_fallback: '^\d{6}$'
+  time: '([01]?\d|2[0-3]):([0-5]\d)(:[0-5]\d)?(\s*[AP]M)?'
+  vehicle: '[一-鿿][A-Z][- ]?[A-Z0-9]{5,6}'
+  standalone_in: '(?<![A-Za-z0-9])IN(?![A-Za-z0-9])'
+  standalone_out: '(?<![A-Za-z0-9])OUT(?![A-Za-z0-9])'
+  gate_in: 'GATE\s*IN'
+  gate_out: 'GATE\s*OUT'
+  email: '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}'
+  booked_qty: '(\d+)\s*X\s*(.+)'
+  date: '\b(\d{1,4})[./\- ](\d{1,2})[./\- ](\d{1,4})\b'
+markers:
+  in_remark: ["remark", "备注"]
+  out_remark: ["remark", "备注"]
+  out_booking: ["单号"]
+  seal: ["seal"]
+  transporter: ["transporter"]
+  vehicle: ["场车牌"]
+direction_in_tokens: ["进"]
+direction_out_tokens: ["出"]

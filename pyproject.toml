@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "depot-movement"
+version = "1.0.0"
+description = "Depot Movement Extraction Module"
+requires-python = "==3.10.*"
+dependencies = [
+    "celery==5.3.6",
+    "redis==5.0.1",
+    "openpyxl==3.1.2",
+    "msoffcrypto-tool==5.4.1",
+    "xlrd==2.0.1",
+    "pyexcel-xls==0.7.0",
+    "pyodbc==5.1.0",
+    "pydantic==2.6.4",
+    "PyYAML==6.0.1",
+    "structlog==24.1.0",
+    "requests==2.31.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.1.1", "fakeredis==2.21.1"]
+
+[project.scripts]
+depot = "depot.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

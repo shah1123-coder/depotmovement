@@ -1,0 +1,35 @@
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+
+  worker:
+    build: .
+    command: celery -A depot.celery.app:celery_app worker --loglevel=INFO
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - ./files:/app/files
+
+  beat:
+    build: .
+    command: celery -A depot.celery.app:celery_app beat --loglevel=INFO
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - ./files:/app/files
+
+  app:
+    build: .
+    command: depot --enqueue
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - ./files:/app/files
+
+volumes:
+  redis-data:

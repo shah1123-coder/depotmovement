@@ -1,4 +1,0 @@
-SARJrpt260610080532303
-ContainerID | BookingId | SealNo | PlotOutDate | PlotOutTime | Transporter | VehicleNo | Remarks | ErrorCode
------------ | --------- | ------ | ----------- | ----------- | ----------- | --------- | ------- | ---------
-(none)

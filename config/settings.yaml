@@ -1,0 +1,35 @@
+paths:
+  files_root: "files"
+  inbox: "files/inbox"
+  runs: "files/runs"
+mail_db:
+  server_env: "MAIL_DB_SERVER"
+  default_server: "10.1.0.6"
+  database: "EMail_Reader_Process_Data"
+  process_name: "VISHNU_DEPOT"
+icms_db:
+  server_env: "ICMS_SERVER"
+  default_server: "10.10.0.72"
+  database: "ICMS"
+  driver: "ODBC Driver 17 for SQL Server"
+  chunk_size: 1000
+insert_db:
+  database: "archeet"
+redis:
+  url_env: "REDIS_URL"
+  default_url: "redis://redis:6379/0"
+  dedup_ttl_days: 30
+celery:
+  broker_env: "CELERY_BROKER_URL"
+  result_env: "CELERY_RESULT_BACKEND"
+attachment_api:
+  base_url: "https://mail-reader.sarjak.com/api/attachment/internet-id"
+  skip_if_name_contains: ["ARCON"]
+  keep_only_if_name_contains: ["SARJAK"]
+detection:
+  min_header_cells: 3
+  title_scan_rows: 2
+batch:
+  workbook_concurrency: 8
+gate_in_status_valid: [2, 7]
+relevant_status_ids: [2, 3, 6, 7]
